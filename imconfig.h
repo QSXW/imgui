@@ -129,3 +129,6 @@ namespace ImGui
     void MyFunction(const char* name, MyMatrix44* mtx);
 }
 */
+
+//---- Disables signed distance fonts and shapes. If no scalable fonts, text effects, or shadows are used, this can be used to speed up the rendering
+//#define IMGUI_DISABLE_SDF

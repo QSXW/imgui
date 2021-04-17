@@ -112,10 +112,15 @@ int main(int, char**)
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
+    style.WindowRounding = 12;
+    style.FrameRounding = 12;
+    style.WindowBorderSize = 0;
+    style.FrameShadowSize = 3;
 
     // Setup Platform/Renderer backends
     ImGui_ImplWin32_InitForOpenGL(hwnd);
-    ImGui_ImplOpenGL3_Init();
+    // default (if no argument is given) is ImGuiBackendFlags_DefaultFast (no signed distance fonts nor shapes, this is what current users expect)
+    ImGui_ImplOpenGL3_Init(nullptr, ImGuiBackendFlags_DefaultDesktop);
 
     // Win32+GL needs specific hooks for viewport, as there are specific things needed to tie Win32 and GL api.
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)

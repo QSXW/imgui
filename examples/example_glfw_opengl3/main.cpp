@@ -7,11 +7,16 @@
 // - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
 // - Introduction, links and more at the top of imgui.cpp
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
 #define GL_SILENCE_DEPRECATION
+#include "../sdf_demo.h"
+
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
 #endif
@@ -33,6 +38,34 @@ static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
+
+#if __cplusplus >= 201103L
+#include <mutex>
+#include <thread>
+#include <vector>
+#include <iostream>
+
+void Dispatcher(ImRunner runner, unsigned int count, void* arg) {
+  std::mutex mutex;
+  std::cout << "background: " << count << std::endl;
+  const auto& f = [runner, arg, &count, &mutex] {
+    mutex.lock();
+    while (count > 0) {
+      auto current = --count;
+      mutex.unlock();
+      runner(current, arg);
+      mutex.lock();
+    }
+    mutex.unlock();
+  };
+  std::vector<std::thread> threads {std::min(std::thread::hardware_concurrency()-1, count)};
+  for (auto& t : threads)
+    t = std::thread(f);
+  f();
+  for (auto& t : threads)
+    t.join();
+}
+#endif
 
 // Main code
 int main(int, char**)
@@ -83,7 +116,7 @@ int main(int, char**)
     //io.ConfigViewportsNoTaskBarIcon = true;
 
     // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
+    ImGui::StyleColorsLight();
     //ImGui::StyleColorsLight();
 
     // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
@@ -94,12 +127,19 @@ int main(int, char**)
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowRounding = 12;
+    style.FrameRounding = 12;
+    style.WindowBorderSize = 0;
+    style.FrameShadowSize = 3;
+
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
 #ifdef __EMSCRIPTEN__
     ImGui_ImplGlfw_InstallEmscriptenCanvasResizeCallback("#canvas");
 #endif
-    ImGui_ImplOpenGL3_Init(glsl_version);
+    // default (if no argument is given) is ImGuiBackendFlags_DefaultFast (no signed distance fonts nor shapes, this is what current users expect)
+    ImGui_ImplOpenGL3_Init(glsl_version, ImGuiBackendFlags_DefaultDesktop);
 
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -117,6 +157,36 @@ int main(int, char**)
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != nullptr);
+    ImFontConfig config;
+    config.SignedDistanceFont = true;
+    //io.Fonts->AddFontDefault();
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f, &config);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f, &config);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f, &config);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f, &config);
+    io.Fonts->AddFontDefault(&config);
+
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
+    io.Fonts->AddFontDefault();
+
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 32.0f, &config);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 32.0f, &config);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 32.0f, &config);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 32.0f, &config);
+
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 32.0f);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 32.0f);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 32.0f);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 32.0f);
+    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+    //IM_ASSERT(font != NULL);
+
+#if __cplusplus >= 201103L
+    io.Fonts->Build(Dispatcher);
+#endif
 
     // Our state
     bool show_demo_window = true;

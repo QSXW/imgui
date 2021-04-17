@@ -6,11 +6,16 @@
 // - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
 // - Introduction, links and more at the top of imgui.cpp
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
 #include <d3d11.h>
 #include <tchar.h>
+
+#include "../sdf_demo.h"
 
 // Data
 static ID3D11Device*            g_pd3dDevice = nullptr;
@@ -64,7 +69,7 @@ int main(int, char**)
     //io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleViewports; // FIXME-DPI: Experimental.
 
     // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
+    ImGui::StyleColorsLight();
     //ImGui::StyleColorsLight();
 
     // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
@@ -75,9 +80,14 @@ int main(int, char**)
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
+    style.WindowRounding = 12;
+    style.FrameRounding = 12;
+    style.WindowBorderSize = 0;
+    style.FrameShadowSize = 3;
+
     // Setup Platform/Renderer backends
     ImGui_ImplWin32_Init(hwnd);
-    ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
+    ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext, ImGuiBackendFlags_DefaultDesktop);
 
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -87,6 +97,8 @@ int main(int, char**)
     // - Use '#define IMGUI_ENABLE_FREETYPE' in your imconfig file to use Freetype for higher quality font rendering.
     // - Read 'docs/FONTS.md' for more instructions and details.
     // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
+    ImFontConfig config;
+    config.SignedDistanceFont = true;
     //io.Fonts->AddFontDefault();
     //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
@@ -94,6 +106,29 @@ int main(int, char**)
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != nullptr);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f, &config);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f, &config);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f, &config);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f, &config);
+    io.Fonts->AddFontDefault(&config);
+
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
+    io.Fonts->AddFontDefault();
+
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 32.0f, &config);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 32.0f, &config);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 32.0f, &config);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 32.0f, &config);
+
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 32.0f);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 32.0f);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 32.0f);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 32.0f);
+    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
+    //IM_ASSERT(font != NULL);
 
     // Our state
     bool show_demo_window = true;
@@ -155,6 +190,9 @@ int main(int, char**)
             ImGui::Text("counter = %d", counter);
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+
+            SDFDemo();
+
             ImGui::End();
         }
 

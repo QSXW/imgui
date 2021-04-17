@@ -1206,6 +1206,7 @@ ImGuiStyle::ImGuiStyle()
     WindowPadding           = ImVec2(8,8);      // Padding within a window
     WindowRounding          = 0.0f;             // Radius of window corners rounding. Set to 0.0f to have rectangular windows. Large values tend to lead to variety of artifacts and are not recommended.
     WindowBorderSize        = 1.0f;             // Thickness of border around windows. Generally set to 0.0f or 1.0f. Other values not well tested.
+    WindowShadowSize        = 5.0f;             // Thickness of shadow behind windows in pixels.
     WindowMinSize           = ImVec2(32,32);    // Minimum window size
     WindowTitleAlign        = ImVec2(0.0f,0.5f);// Alignment for title bar text
     WindowMenuButtonPosition= ImGuiDir_Left;    // Position of the collapsing/docking button in the title bar (left/right). Defaults to ImGuiDir_Left.
@@ -1216,6 +1217,7 @@ ImGuiStyle::ImGuiStyle()
     FramePadding            = ImVec2(4,3);      // Padding within a framed rectangle (used by most widgets)
     FrameRounding           = 0.0f;             // Radius of frame corners rounding. Set to 0.0f to have rectangular frames (used by most widgets).
     FrameBorderSize         = 0.0f;             // Thickness of border around frames. Generally set to 0.0f or 1.0f. Other values not well tested.
+    FrameShadowSize         = 0.0f;             // Thickness of shadow behind frames in pixels.
     ItemSpacing             = ImVec2(8,4);      // Horizontal and vertical spacing between widgets/lines
     ItemInnerSpacing        = ImVec2(4,4);      // Horizontal and vertical spacing between within elements of a composed widget (e.g. a slider and its label)
     CellPadding             = ImVec2(4,2);      // Padding within a table cell. CellPadding.y may be altered between different rows.
@@ -1265,11 +1267,13 @@ void ImGuiStyle::ScaleAllSizes(float scale_factor)
 {
     WindowPadding = ImTrunc(WindowPadding * scale_factor);
     WindowRounding = ImTrunc(WindowRounding * scale_factor);
+    WindowShadowSize = ImTrunc(WindowShadowSize * scale_factor);
     WindowMinSize = ImTrunc(WindowMinSize * scale_factor);
     ChildRounding = ImTrunc(ChildRounding * scale_factor);
     PopupRounding = ImTrunc(PopupRounding * scale_factor);
     FramePadding = ImTrunc(FramePadding * scale_factor);
     FrameRounding = ImTrunc(FrameRounding * scale_factor);
+    FrameShadowSize = ImTrunc(FrameShadowSize * scale_factor);
     ItemSpacing = ImTrunc(ItemSpacing * scale_factor);
     ItemInnerSpacing = ImTrunc(ItemInnerSpacing * scale_factor);
     CellPadding = ImTrunc(CellPadding * scale_factor);
@@ -3168,6 +3172,7 @@ static const ImGuiDataVarInfo GStyleVarInfo[] =
     { ImGuiDataType_Float, 2, (ImU32)offsetof(ImGuiStyle, WindowPadding) },         // ImGuiStyleVar_WindowPadding
     { ImGuiDataType_Float, 1, (ImU32)offsetof(ImGuiStyle, WindowRounding) },        // ImGuiStyleVar_WindowRounding
     { ImGuiDataType_Float, 1, (ImU32)offsetof(ImGuiStyle, WindowBorderSize) },      // ImGuiStyleVar_WindowBorderSize
+    { ImGuiDataType_Float, 1, (ImU32)offsetof(ImGuiStyle, WindowShadowSize) },      // ImGuiStyleVar_WindowShadowSize
     { ImGuiDataType_Float, 2, (ImU32)offsetof(ImGuiStyle, WindowMinSize) },         // ImGuiStyleVar_WindowMinSize
     { ImGuiDataType_Float, 2, (ImU32)offsetof(ImGuiStyle, WindowTitleAlign) },      // ImGuiStyleVar_WindowTitleAlign
     { ImGuiDataType_Float, 1, (ImU32)offsetof(ImGuiStyle, ChildRounding) },         // ImGuiStyleVar_ChildRounding
@@ -3177,6 +3182,7 @@ static const ImGuiDataVarInfo GStyleVarInfo[] =
     { ImGuiDataType_Float, 2, (ImU32)offsetof(ImGuiStyle, FramePadding) },          // ImGuiStyleVar_FramePadding
     { ImGuiDataType_Float, 1, (ImU32)offsetof(ImGuiStyle, FrameRounding) },         // ImGuiStyleVar_FrameRounding
     { ImGuiDataType_Float, 1, (ImU32)offsetof(ImGuiStyle, FrameBorderSize) },       // ImGuiStyleVar_FrameBorderSize
+    { ImGuiDataType_Float, 1, (ImU32)offsetof(ImGuiStyle, FrameShadowSize) },       // ImGuiStyleVar_FrameShadowSize
     { ImGuiDataType_Float, 2, (ImU32)offsetof(ImGuiStyle, ItemSpacing) },           // ImGuiStyleVar_ItemSpacing
     { ImGuiDataType_Float, 2, (ImU32)offsetof(ImGuiStyle, ItemInnerSpacing) },      // ImGuiStyleVar_ItemInnerSpacing
     { ImGuiDataType_Float, 1, (ImU32)offsetof(ImGuiStyle, IndentSpacing) },         // ImGuiStyleVar_IndentSpacing
@@ -3193,6 +3199,7 @@ static const ImGuiDataVarInfo GStyleVarInfo[] =
     { ImGuiDataType_Float, 2, (ImU32)offsetof(ImGuiStyle, SeparatorTextAlign) },    // ImGuiStyleVar_SeparatorTextAlign
     { ImGuiDataType_Float, 2, (ImU32)offsetof(ImGuiStyle, SeparatorTextPadding) },  // ImGuiStyleVar_SeparatorTextPadding
     { ImGuiDataType_Float, 1, (ImU32)offsetof(ImGuiStyle, DockingSeparatorSize) },  // ImGuiStyleVar_DockingSeparatorSize
+    { ImGuiDataType_Float, 1, (ImU32)offsetof(ImGuiStyle, FontShadowSize) },        // ImGuiStyleVar_FontShadowSize
 };
 
 const ImGuiDataVarInfo* ImGui::GetStyleVarInfo(ImGuiStyleVar idx)
@@ -3259,6 +3266,8 @@ const char* ImGui::GetStyleColorName(ImGuiCol idx)
     case ImGuiCol_Text: return "Text";
     case ImGuiCol_TextDisabled: return "TextDisabled";
     case ImGuiCol_WindowBg: return "WindowBg";
+    case ImGuiCol_WindowShadowStart: return "WindowShadowStart";
+    case ImGuiCol_WindowShadowEnd: return "WindowShadowEnd";
     case ImGuiCol_ChildBg: return "ChildBg";
     case ImGuiCol_PopupBg: return "PopupBg";
     case ImGuiCol_Border: return "Border";
@@ -3266,6 +3275,8 @@ const char* ImGui::GetStyleColorName(ImGuiCol idx)
     case ImGuiCol_FrameBg: return "FrameBg";
     case ImGuiCol_FrameBgHovered: return "FrameBgHovered";
     case ImGuiCol_FrameBgActive: return "FrameBgActive";
+    case ImGuiCol_FrameShadowStart: return "FrameShadowStart";
+    case ImGuiCol_FrameShadowEnd: return "FrameShadowEnd";
     case ImGuiCol_TitleBg: return "TitleBg";
     case ImGuiCol_TitleBgActive: return "TitleBgActive";
     case ImGuiCol_TitleBgCollapsed: return "TitleBgCollapsed";
@@ -3311,6 +3322,8 @@ const char* ImGui::GetStyleColorName(ImGuiCol idx)
     case ImGuiCol_NavWindowingHighlight: return "NavWindowingHighlight";
     case ImGuiCol_NavWindowingDimBg: return "NavWindowingDimBg";
     case ImGuiCol_ModalWindowDimBg: return "ModalWindowDimBg";
+    case ImGuiCol_FontShadowStart: return "FontShadowStart";
+    case ImGuiCol_FontShadowEnd: return "FontShadowEnd";
     }
     IM_ASSERT(0);
     return "Unknown";
@@ -3357,7 +3370,7 @@ void ImGui::RenderText(ImVec2 pos, const char* text, const char* text_end, bool 
 
     if (text != text_display_end)
     {
-        window->DrawList->AddText(g.Font, g.FontSize, pos, GetColorU32(ImGuiCol_Text), text, text_display_end);
+        window->DrawList->AddText(g.Font, g.FontSize, pos, GetColorU32(ImGuiCol_Text), text, text_display_end, 0.0f, NULL, g.Style.FontShadowSize, GetColorU32(ImGuiCol_FontShadowStart), GetColorU32(ImGuiCol_FontShadowEnd));
         if (g.LogEnabled)
             LogRenderedText(&pos, text, text_display_end);
     }
@@ -3373,7 +3386,7 @@ void ImGui::RenderTextWrapped(ImVec2 pos, const char* text, const char* text_end
 
     if (text != text_end)
     {
-        window->DrawList->AddText(g.Font, g.FontSize, pos, GetColorU32(ImGuiCol_Text), text, text_end, wrap_width);
+        window->DrawList->AddText(g.Font, g.FontSize, pos, GetColorU32(ImGuiCol_Text), text, text_end, wrap_width, NULL, g.Style.FontShadowSize, GetColorU32(ImGuiCol_FontShadowStart), GetColorU32(ImGuiCol_FontShadowEnd));
         if (g.LogEnabled)
             LogRenderedText(&pos, text, text_end);
     }
@@ -3401,14 +3414,15 @@ void ImGui::RenderTextClippedEx(ImDrawList* draw_list, const ImVec2& pos_min, co
     if (align.y > 0.0f) pos.y = ImMax(pos.y, pos.y + (pos_max.y - pos.y - text_size.y) * align.y);
 
     // Render
+    ImGuiContext& g = *GImGui;
     if (need_clipping)
     {
         ImVec4 fine_clip_rect(clip_min->x, clip_min->y, clip_max->x, clip_max->y);
-        draw_list->AddText(NULL, 0.0f, pos, GetColorU32(ImGuiCol_Text), text, text_display_end, 0.0f, &fine_clip_rect);
+        draw_list->AddText(NULL, 0.0f, pos, GetColorU32(ImGuiCol_Text), text, text_display_end, 0.0f, &fine_clip_rect, g.Style.FontShadowSize, GetColorU32(ImGuiCol_FontShadowStart), GetColorU32(ImGuiCol_FontShadowEnd));
     }
     else
     {
-        draw_list->AddText(NULL, 0.0f, pos, GetColorU32(ImGuiCol_Text), text, text_display_end, 0.0f, NULL);
+        draw_list->AddText(NULL, 0.0f, pos, GetColorU32(ImGuiCol_Text), text, text_display_end, 0.0f, NULL, g.Style.FontShadowSize, GetColorU32(ImGuiCol_FontShadowStart), GetColorU32(ImGuiCol_FontShadowEnd));
     }
 }
 
@@ -3452,7 +3466,10 @@ void ImGui::RenderTextEllipsis(ImDrawList* draw_list, const ImVec2& pos_min, con
         const float font_size = draw_list->_Data->FontSize;
         const float font_scale = font_size / font->FontSize;
         const char* text_end_ellipsis = NULL;
-        const float ellipsis_width = font->EllipsisWidth * font_scale;
+        float ellipsis_width = font->EllipsisWidth * font_scale;
+        const bool sdf = ImGui::GetIO().BackendFlags & ImGuiBackendFlags_SignedDistanceFonts;
+        const float xy_padding = sdf ? float(IMGUI_SDF_PADDING) : 0.0f;
+        ellipsis_width = ellipsis_width - 2*xy_padding;
 
         // We can now claim the space between pos_max.x and ellipsis_max.x
         const float text_avail_width = ImMax((ImMax(pos_max.x, ellipsis_max_x) - ellipsis_width) - pos_min.x, 1.0f);
@@ -3473,9 +3490,11 @@ void ImGui::RenderTextEllipsis(ImDrawList* draw_list, const ImVec2& pos_min, con
         // Render text, render ellipsis
         RenderTextClippedEx(draw_list, pos_min, ImVec2(clip_max_x, pos_max.y), text, text_end_ellipsis, &text_size, ImVec2(0.0f, 0.0f));
         ImVec2 ellipsis_pos = ImTrunc(ImVec2(pos_min.x + text_size_clipped_x, pos_min.y));
-        if (ellipsis_pos.x + ellipsis_width <= ellipsis_max_x)
+        if (ellipsis_pos.x + ellipsis_width <= ellipsis_max_x) {
+            bool globalSDF = ImGui::GetIO().BackendFlags & ImGuiBackendFlags_SignedDistanceFonts;
             for (int i = 0; i < font->EllipsisCharCount; i++, ellipsis_pos.x += font->EllipsisCharStep * font_scale)
-                font->RenderChar(draw_list, font_size, ellipsis_pos, GetColorU32(ImGuiCol_Text), font->EllipsisChar);
+                font->RenderChar(draw_list, font_size, ellipsis_pos, GetColorU32(ImGuiCol_Text), font->EllipsisChar, globalSDF && font->SignedDistanceFont, g.Style.FontShadowSize, GetColorU32(ImGuiCol_FontShadowStart), GetColorU32(ImGuiCol_FontShadowEnd));
+        }
     }
     else
     {
@@ -3491,11 +3510,10 @@ void ImGui::RenderFrame(ImVec2 p_min, ImVec2 p_max, ImU32 fill_col, bool border,
 {
     ImGuiContext& g = *GImGui;
     ImGuiWindow* window = g.CurrentWindow;
-    window->DrawList->AddRectFilled(p_min, p_max, fill_col, rounding);
+    window->DrawList->AddRectFilled(p_min, p_max, fill_col, rounding, 0, g.Style.FrameShadowSize, GetColorU32(ImGuiCol_FrameShadowStart), GetColorU32(ImGuiCol_FrameShadowEnd));
     const float border_size = g.Style.FrameBorderSize;
     if (border && border_size > 0.0f)
     {
-        window->DrawList->AddRect(p_min + ImVec2(1, 1), p_max + ImVec2(1, 1), GetColorU32(ImGuiCol_BorderShadow), rounding, 0, border_size);
         window->DrawList->AddRect(p_min, p_max, GetColorU32(ImGuiCol_Border), rounding, 0, border_size);
     }
 }
@@ -3504,10 +3522,10 @@ void ImGui::RenderFrameBorder(ImVec2 p_min, ImVec2 p_max, float rounding)
 {
     ImGuiContext& g = *GImGui;
     ImGuiWindow* window = g.CurrentWindow;
+    window->DrawList->AddRectFilled(p_min, p_max, IM_COL32_BLACK_TRANS, rounding, 0, g.Style.FrameShadowSize, GetColorU32(ImGuiCol_FrameShadowStart), GetColorU32(ImGuiCol_FrameShadowEnd));
     const float border_size = g.Style.FrameBorderSize;
     if (border_size > 0.0f)
     {
-        window->DrawList->AddRect(p_min + ImVec2(1, 1), p_max + ImVec2(1, 1), GetColorU32(ImGuiCol_BorderShadow), rounding, 0, border_size);
         window->DrawList->AddRect(p_min, p_max, GetColorU32(ImGuiCol_Border), rounding, 0, border_size);
     }
 }
@@ -4796,6 +4814,12 @@ void ImGui::NewFrame()
         g.DrawListSharedData.InitialFlags |= ImDrawListFlags_AntiAliasedFill;
     if (g.IO.BackendFlags & ImGuiBackendFlags_RendererHasVtxOffset)
         g.DrawListSharedData.InitialFlags |= ImDrawListFlags_AllowVtxOffset;
+    if (g.IO.BackendFlags & ImGuiBackendFlags_SignedDistanceFonts)
+        g.DrawListSharedData.InitialFlags |= ImDrawListFlags_SignedDistanceFonts;
+    if (g.IO.BackendFlags & ImGuiBackendFlags_SignedDistanceShapes)
+        g.DrawListSharedData.InitialFlags |= ImDrawListFlags_SignedDistanceShapes;
+    if (g.IO.BackendFlags & ImGuiBackendFlags_ProvocingVertexFirst)
+        g.DrawListSharedData.InitialFlags |= ImDrawListFlags_ProvocingVertexFirst;
 
     // Mark rendering data as invalid to prevent user who may have a handle on it to use it.
     for (ImGuiViewportP* viewport : g.Viewports)
@@ -6509,7 +6533,10 @@ void ImGui::RenderWindowDecorations(ImGuiWindow* window, const ImRect& title_bar
             ImDrawList* bg_draw_list = window->DockIsActive ? window->DockNode->HostWindow->DrawList : window->DrawList;
             if (window->DockIsActive || (flags & ImGuiWindowFlags_DockNodeHost))
                 bg_draw_list->ChannelsSetCurrent(DOCKING_HOST_DRAW_CHANNEL_BG);
-            bg_draw_list->AddRectFilled(window->Pos + ImVec2(0, window->TitleBarHeight()), window->Pos + window->Size, bg_col, window_rounding, (flags & ImGuiWindowFlags_NoTitleBar) ? 0 : ImDrawFlags_RoundCornersBottom);
+            // one smaller to avoid rendering artifacts in anti-aliasing.
+            const float window_border_size_smaller = ImMax(0.0f, window_border_size-1);
+            ImVec2 border = ImVec2(window_border_size_smaller, window_border_size_smaller);
+            window->DrawList->AddRectFilled(window->Pos - border, window->Pos + window->Size + border, bg_col, window_rounding + window_border_size_smaller, 0, (flags & ImGuiWindowFlags_Modal) || (flags & ImGuiWindowFlags_ChildWindow) ? 0 : g.Style.WindowShadowSize, GetColorU32(ImGuiCol_WindowShadowStart), GetColorU32(ImGuiCol_WindowShadowEnd));
             if (window->DockIsActive || (flags & ImGuiWindowFlags_DockNodeHost))
                 bg_draw_list->ChannelsSetCurrent(DOCKING_HOST_DRAW_CHANNEL_FG);
         }
@@ -20804,8 +20831,8 @@ void ImGui::DebugNodeDrawCmdShowMeshAndBoundingBox(ImDrawList* out_draw_list, co
 // [DEBUG] Display details for a single font, called by ShowStyleEditor().
 void ImGui::DebugNodeFont(ImFont* font)
 {
-    bool opened = TreeNode(font, "Font: \"%s\"\n%.2f px, %d glyphs, %d file(s)",
-        font->ConfigData ? font->ConfigData[0].Name : "", font->FontSize, font->Glyphs.Size, font->ConfigDataCount);
+    bool opened = TreeNode(font, "Font: \"%s\"\n%.2f px, %d glyphs, %d file(s)%s",
+        font->ConfigData ? font->ConfigData[0].Name : "", font->FontSize, font->Glyphs.Size, font->ConfigDataCount, font->SignedDistanceFont ? ", uses signed distance" : "");
     SameLine();
     if (SmallButton("Set as default"))
         GetIO().FontDefault = font;
