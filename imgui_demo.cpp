@@ -654,6 +654,9 @@ void ImGui::ShowDemoWindow(bool* p_open)
             ImGui::CheckboxFlags("io.BackendFlags: RendererHasVtxOffset",   &io.BackendFlags, ImGuiBackendFlags_RendererHasVtxOffset);
             ImGui::CheckboxFlags("io.BackendFlags: RendererHasTextures",    &io.BackendFlags, ImGuiBackendFlags_RendererHasTextures);
             ImGui::CheckboxFlags("io.BackendFlags: RendererHasViewports",   &io.BackendFlags, ImGuiBackendFlags_RendererHasViewports);
+            ImGui::CheckboxFlags("io.BackendFlags: SignedDistanceFonts",    &io.BackendFlags, ImGuiBackendFlags_SignedDistanceFonts);
+            ImGui::CheckboxFlags("io.BackendFlags: SignedDistanceShapes",   &io.BackendFlags, ImGuiBackendFlags_SignedDistanceShapes);
+            ImGui::CheckboxFlags("io.BackendFlags: ProvocingVertexFirst",   &io.BackendFlags, ImGuiBackendFlags_ProvocingVertexFirst);
             ImGui::EndDisabled();
 
             ImGui::TreePop();
@@ -8565,7 +8568,12 @@ void ImGui::ShowStyleEditor(ImGuiStyle* ref)
             SliderFloat("PopupBorderSize", &style.PopupBorderSize, 0.0f, max_border_size, "%.0f");
             SliderFloat("FrameBorderSize", &style.FrameBorderSize, 0.0f, max_border_size, "%.0f");
 
-            SeparatorText("Rounding");
+            ImGui::Text("Shadows (for SDF backends)");
+            ImGui::SliderFloat("WindowShadowSize", &style.WindowShadowSize, 0.0f, 32.0f, "%.0f");
+            ImGui::SliderFloat("FrameShadowSize", &style.FrameShadowSize, 0.0f, 32.0f, "%.0f");
+            ImGui::SliderFloat("FontShadowSize", &style.FontShadowSize, 0.0f, 1.0f, "%.01f");
+
+            ImGui::Text("Rounding");
             SliderFloat("WindowRounding", &style.WindowRounding, 0.0f, 12.0f, "%.0f");
             SliderFloat("ChildRounding", &style.ChildRounding, 0.0f, 12.0f, "%.0f");
             SliderFloat("FrameRounding", &style.FrameRounding, 0.0f, 12.0f, "%.0f");
@@ -8742,12 +8750,22 @@ void ImGui::ShowStyleEditor(ImGuiStyle* ref)
                 "However, the _correct_ way of scaling your UI is currently to reload your font at the designed size, "
                 "rebuild the font atlas, and call style.ScaleAllSizes() on a reference ImGuiStyle structure.\n"
                 "Using those settings here will give you poor quality results.");
-            PushItemWidth(GetFontSize() * 8);
-            DragFloat("global scale", &io.FontGlobalScale, 0.005f, MIN_SCALE, MAX_SCALE, "%.2f", ImGuiSliderFlags_AlwaysClamp); // Scale everything
-            //static float window_scale = 1.0f;
-            //if (DragFloat("window scale", &window_scale, 0.005f, MIN_SCALE, MAX_SCALE, "%.2f", ImGuiSliderFlags_AlwaysClamp)) // Scale only this window
-            //    SetWindowFontScale(window_scale);
-            PopItemWidth();
+            static float window_scale = 1.0f;
+            ImGui::PushItemWidth(ImGui::GetFontSize() * 8);
+            if (ImGui::DragFloat("window scale", &window_scale, 0.005f, MIN_SCALE, MAX_SCALE, "%.2f", ImGuiSliderFlags_AlwaysClamp)) // Scale only this window
+                ImGui::SetWindowFontScale(window_scale);
+            ImGui::SameLine();
+            if (ImGui::Button("Reset")) {
+              window_scale = 1.0;
+              ImGui::SetWindowFontScale(window_scale);
+            }
+            ImGui::DragFloat("global scale", &io.FontGlobalScale, 0.005f, MIN_SCALE, MAX_SCALE, "%.2f", ImGuiSliderFlags_AlwaysClamp); // Scale everything
+            ImGui::SameLine();
+            ImGui::PushID("global_scale_reset");
+            if (ImGui::Button("Reset"))
+              io.FontGlobalScale = 1.0f;
+            ImGui::PopID();
+            ImGui::PopItemWidth();
             */
 
             EndTabItem();
