@@ -36,6 +36,9 @@ Index of this file:
 #ifdef IMGUI_ENABLE_FREETYPE
 #include "misc/freetype/imgui_freetype.h"
 #endif
+#ifdef IMGUI_ENABLE_MSDFGEN
+#include "imgui_msdfgen.h"
+#endif
 
 #include <stdio.h>      // vsnprintf, sscanf, printf
 
@@ -2362,6 +2365,12 @@ void    ImFontAtlas::ClearInputData()
         {
             IM_FREE(font_cfg.FontData);
             font_cfg.FontData = NULL;
+
+            if (font_cfg.FontPixels)
+            {
+                IM_FREE(font_cfg.FontPixels);
+                font_cfg.FontPixels = NULL;
+            }
         }
 
     // When clearing this we lose access to the font name and other information used to build the font.
@@ -2461,6 +2470,13 @@ ImFont* ImFontAtlas::AddFont(const ImFontConfig* font_cfg)
         new_font_cfg.FontData = IM_ALLOC(new_font_cfg.FontDataSize);
         new_font_cfg.FontDataOwnedByAtlas = true;
         memcpy(new_font_cfg.FontData, font_cfg->FontData, (size_t)new_font_cfg.FontDataSize);
+
+        if (new_font_cfg.FontPixels)
+        {
+			size_t size = new_font_cfg.width *new_font_cfg.heigth * 4;
+			new_font_cfg.FontPixels = IM_ALLOC(size);
+			memcpy(new_font_cfg.FontPixels, font_cfg->FontPixels, size);
+        }
     }
 
     if (new_font_cfg.DstFont->EllipsisChar == (ImWchar)-1)
@@ -2570,6 +2586,23 @@ ImFont* ImFontAtlas::AddFontFromMemoryCompressedBase85TTF(const char* compressed
     return font;
 }
 
+IMGUI_API ImFont *ImFontAtlas::AddFontFromImageAndGlyphData(void *pixels, int width, int heigth, void *glyphData, int glyphDataSize, float size_pixels, const ImFontConfig *font_cfg_template, const ImWchar *glyph_ranges)
+{
+    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and EndFrame/Render()!");
+    ImFontConfig font_cfg = font_cfg_template ? *font_cfg_template : ImFontConfig();
+    IM_ASSERT(font_cfg.FontData == NULL);
+    font_cfg.FontPixels   = pixels;
+    font_cfg.width        = width;
+    font_cfg.heigth       = heigth;
+	font_cfg.FontData     = glyphData;
+	font_cfg.FontDataSize = glyphDataSize;
+    font_cfg.SizePixels = size_pixels > 0.0f ? size_pixels : font_cfg.SizePixels;
+    font_cfg.FontDataOwnedByAtlas = false;
+    if (glyph_ranges)
+        font_cfg.GlyphRanges = glyph_ranges;
+    return AddFont(&font_cfg);
+}
+
 int ImFontAtlas::AddCustomRectRegular(int width, int height)
 {
     IM_ASSERT(width > 0 && width <= 0xFFFF);
@@ -2647,6 +2680,8 @@ bool    ImFontAtlas::Build(ImDispatch dispatcher)
     {
 #ifdef IMGUI_ENABLE_FREETYPE
         builder_io = ImGuiFreeType::GetBuilderForFreeType();
+#elif defined(IMGUI_ENABLE_MSDFGEN)
+        builder_io = ImGuiMsdfgen::GetBuilderForMsdfgen();
 #elif defined(IMGUI_ENABLE_STB_TRUETYPE)
         builder_io = ImFontAtlasGetBuilderForStbTruetype();
 #else
@@ -3759,6 +3794,8 @@ void ImFont::AddGlyph(const ImFontConfig* cfg, ImWchar codepoint, float x0, floa
             float char_off_x = cfg->PixelSnapH ? ImTrunc((advance_x - advance_x_original) * 0.5f) : (advance_x - advance_x_original) * 0.5f;
             x0 += char_off_x;
             x1 += char_off_x;
+            y0 += char_off_x;
+            y1 += char_off_x;
         }
 
         // Snap to pixel
