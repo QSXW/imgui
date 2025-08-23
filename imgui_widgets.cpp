@@ -8884,7 +8884,10 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
     // Render tab shape
     ImDrawList* display_draw_list = window->DrawList;
     const ImU32 tab_col = GetColorU32((held || hovered) ? ImGuiCol_TabHovered : tab_contents_visible ? (tab_bar_focused ? ImGuiCol_TabActive : ImGuiCol_TabUnfocusedActive) : (tab_bar_focused ? ImGuiCol_Tab : ImGuiCol_TabUnfocused));
-    TabItemBackground(display_draw_list, bb, flags, tab_col);
+	if (hovered)
+	{
+		TabItemBackground(display_draw_list, bb, flags, tab_col);
+	}
     RenderNavHighlight(bb, id);
 
     // Select with right mouse button. This is so the common idiom for context menu automatically highlight the current widget.
@@ -9077,6 +9080,13 @@ void ImGui::TabItemLabelAndCloseButton(ImDrawList* draw_list, const ImRect& bb, 
         ellipsis_max_x = text_pixel_clip_bb.Max.x;
     }
     RenderTextEllipsis(draw_list, text_ellipsis_clip_bb.Min, text_ellipsis_clip_bb.Max, text_pixel_clip_bb.Max.x, ellipsis_max_x, label, NULL, &label_size);
+
+    if (is_contents_visible)
+	{
+		ImVec2 lightBarMin = {text_ellipsis_clip_bb.Min.x - 4, text_ellipsis_clip_bb.Max.y - 2.2f};
+		ImVec2 lightBarMax = {text_ellipsis_clip_bb.Max.x + 4, text_ellipsis_clip_bb.Max.y};
+		draw_list->AddRectFilled(lightBarMin, lightBarMax, 0xffff8844, 0.5, 0);
+	}
 
 #if 0
     if (!is_contents_visible)

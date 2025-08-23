@@ -6001,8 +6001,8 @@ static inline ImVec2 CalcWindowMinSize(ImGuiWindow* window)
     ImVec2 size_min;
     if ((window->Flags & ImGuiWindowFlags_ChildWindow) && !(window->Flags & ImGuiWindowFlags_Popup))
     {
-        size_min.x = (window->ChildFlags & ImGuiChildFlags_ResizeX) ? g.Style.WindowMinSize.x : 4.0f;
-        size_min.y = (window->ChildFlags & ImGuiChildFlags_ResizeY) ? g.Style.WindowMinSize.y : 4.0f;
+        size_min.x = (window->ChildFlags & ImGuiChildFlags_ResizeX) ? g.Style.WindowMinSize.x : 1.0f;
+        size_min.y = (window->ChildFlags & ImGuiChildFlags_ResizeY) ? g.Style.WindowMinSize.y : 1.0f;
     }
     else
     {
@@ -6533,10 +6533,11 @@ void ImGui::RenderWindowDecorations(ImGuiWindow* window, const ImRect& title_bar
             ImDrawList* bg_draw_list = window->DockIsActive ? window->DockNode->HostWindow->DrawList : window->DrawList;
             if (window->DockIsActive || (flags & ImGuiWindowFlags_DockNodeHost))
                 bg_draw_list->ChannelsSetCurrent(DOCKING_HOST_DRAW_CHANNEL_BG);
+
             // one smaller to avoid rendering artifacts in anti-aliasing.
             const float window_border_size_smaller = ImMax(0.0f, window_border_size-1);
             ImVec2 border = ImVec2(window_border_size_smaller, window_border_size_smaller);
-            window->DrawList->AddRectFilled(window->Pos - border, window->Pos + window->Size + border, bg_col, window_rounding + window_border_size_smaller, 0, (flags & ImGuiWindowFlags_Modal) || (flags & ImGuiWindowFlags_ChildWindow) ? 0 : g.Style.WindowShadowSize, GetColorU32(ImGuiCol_WindowShadowStart), GetColorU32(ImGuiCol_WindowShadowEnd));
+            bg_draw_list->AddRectFilled(window->Pos - border, window->Pos + window->Size + border, bg_col, window_rounding + window_border_size_smaller, 0, (flags & ImGuiWindowFlags_Modal) || (flags & ImGuiWindowFlags_ChildWindow) ? 0 : g.Style.WindowShadowSize, GetColorU32(ImGuiCol_WindowShadowStart), GetColorU32(ImGuiCol_WindowShadowEnd));
             if (window->DockIsActive || (flags & ImGuiWindowFlags_DockNodeHost))
                 bg_draw_list->ChannelsSetCurrent(DOCKING_HOST_DRAW_CHANNEL_FG);
         }

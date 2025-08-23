@@ -17,6 +17,50 @@
 #endif
 #endif
 
+#ifdef _WIN32
+#	include <Windows.h>
+#	define LOAD_LIBRARY(s) LoadLibraryA(s)
+#	define FREE_LIBRARY(h) FreeLibrary((HMODULE) (h))
+#	define GET_PROC(h, x)  GetProcAddress((HMODULE)(h), x)
+#else
+#	include <dlfcn.h>
+#	define LOAD_LIBRARY(s) dlopen(s, RTLD_NOW)
+#	define FREE_LIBRARY(h) dlclose(h)
+#	define GET_PROC(h, x) dlsym(h, x)
+#endif
+
+#define DEF_FUNC(x)                 \
+	using PFN_##x = decltype(&(x)); \
+	decltype(&(x)) x;
+#define LOAD_FUNC(x) x = (PFN_##x) GET_PROC(handle, #x);
+struct MsdfgenFunc
+{
+	DEF_FUNC(CreateMsdfgenHandle)
+	DEF_FUNC(DestroyMsdfgenHandle)
+	DEF_FUNC(MsdfgenHandleCreateMsdfgenFont);
+	DEF_FUNC(MsdfgenHandleDestroyMsdfgenFont);
+	DEF_FUNC(MsdfgenFontGetGlyphIndex);
+	DEF_FUNC(MsdfgenFontBuildGlyph);
+	DEF_FUNC(MsdfgenFontFillGlyphInfo);
+	DEF_FUNC(MsdfgenFontGetFontMetrics);
+	DEF_FUNC(MsdfgenConvertFont);
+
+	void Load(void *handle)
+	{
+		LOAD_FUNC(CreateMsdfgenHandle);
+		LOAD_FUNC(DestroyMsdfgenHandle);
+		LOAD_FUNC(MsdfgenHandleCreateMsdfgenFont);
+		LOAD_FUNC(MsdfgenHandleDestroyMsdfgenFont);
+		LOAD_FUNC(MsdfgenFontGetGlyphIndex);
+		LOAD_FUNC(MsdfgenFontBuildGlyph);
+		LOAD_FUNC(MsdfgenFontFillGlyphInfo);
+		LOAD_FUNC(MsdfgenFontGetFontMetrics);
+		LOAD_FUNC(MsdfgenConvertFont);
+	}
+};
+
+static MsdfgenFunc f;
+
 namespace ImGuiMsdfgen
 {
 
@@ -131,7 +175,7 @@ bool ImFontAtlasBuildWithMsdfgen(MsdfgenHandle *handle, ImFontAtlas* atlas, unsi
         else
         {
 			src_tmp.bottom = false;
-			sdf_font = MsdfgenHandleCreateMsdfgenFont(handle, (const uint8_t *) cfg.FontData, cfg.FontDataSize, type);
+			sdf_font = f.MsdfgenHandleCreateMsdfgenFont(handle, (const uint8_t *) cfg.FontData, cfg.FontDataSize, type);
 			if (!sdf_font)
 			{
 				return false;
@@ -192,7 +236,7 @@ bool ImFontAtlasBuildWithMsdfgen(MsdfgenHandle *handle, ImFontAtlas* atlas, unsi
 					if (dst_tmp.GlyphsSet.TestBit(codepoint))        // Don't overwrite existing glyphs. We could make this an option (e.g. MergeOverwrite)
 						continue;
 
-					uint32_t glyph_index = MsdfgenFontGetGlyphIndex(src_tmp.Font, codepoint);
+					uint32_t glyph_index = f.MsdfgenFontGetGlyphIndex(src_tmp.Font, codepoint);
 					if (glyph_index == 0)
 						continue;
 
@@ -298,8 +342,8 @@ bool ImFontAtlasBuildWithMsdfgen(MsdfgenHandle *handle, ImFontAtlas* atlas, unsi
         }
         else
         {
-			MsdfgenFontBuildGlyph(src_tmp.Font, IMGUI_SDF_DETAIL);
-			MsdfgenFontFillGlyphInfo(src_tmp.Font, src_tmp.GlyphsList.Data, src_tmp.GlyphsList.Size, (MsdfgenRect *) src_tmp.Rects, total_surface, padding, src_tmp.pixels, src_tmp.width, src_tmp.height);
+			f.MsdfgenFontBuildGlyph(src_tmp.Font, IMGUI_SDF_DETAIL);
+			f.MsdfgenFontFillGlyphInfo(src_tmp.Font, src_tmp.GlyphsList.Data, src_tmp.GlyphsList.Size, (MsdfgenRect *) src_tmp.Rects, total_surface, padding, src_tmp.pixels, src_tmp.width, src_tmp.height);
         }
     }
 
@@ -403,7 +447,7 @@ bool ImFontAtlasBuildWithMsdfgen(MsdfgenHandle *handle, ImFontAtlas* atlas, unsi
 		}
         else
         {
-			metrics = MsdfgenFontGetFontMetrics(src_tmp.Font);
+			metrics = f.MsdfgenFontGetFontMetrics(src_tmp.Font);
         }
         double unscaled_ascent   = metrics.ascenderY;
         double unscaled_descent  = metrics.descenderY;
@@ -539,7 +583,7 @@ bool ImFontAtlasBuildWithMsdfgen(MsdfgenHandle *handle, ImFontAtlas* atlas, unsi
         }
 
         src_tmp.Rects = NULL;
-		MsdfgenHandleDestroyMsdfgenFont(handle, &src_tmp.Font);
+		f.MsdfgenHandleDestroyMsdfgenFont(handle, &src_tmp.Font);
     }
     atlas->TexPixelsUseColors = tex_use_colors;
 
@@ -553,17 +597,25 @@ bool ImFontAtlasBuildWithMsdfgen(MsdfgenHandle *handle, ImFontAtlas* atlas, unsi
     return true;
 }
 
-
 static bool ImFontAtlasBuildWithMsdfgen(ImFontAtlas *atlas, ImDispatch dispatcher)
 {
-    MsdfgenHandle *handle = CreateMsdfgenHandle();
+    if (!atlas->sharedLibrary)
+    {
+#ifdef _WIN32
+		atlas->sharedLibrary = LOAD_LIBRARY("cmsdfgen.dll");
+#else
+		atlas->sharedLibrary = LOAD_LIBRARY("libcmsdfgen.so");
+#endif
+		f.Load(atlas->sharedLibrary);
+    }
+	MsdfgenHandle *handle = f.CreateMsdfgenHandle();
     if (!handle)
     {
         return false;
     }
 
     bool ret = ImFontAtlasBuildWithMsdfgen(handle, atlas, atlas->FontBuilderFlags);
-    DestroyMsdfgenHandle(&handle);
+	f.DestroyMsdfgenHandle(&handle);
 
     return ret;
 }

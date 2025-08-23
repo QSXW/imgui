@@ -2678,10 +2678,10 @@ bool    ImFontAtlas::Build(ImDispatch dispatcher)
     const ImFontBuilderIO* builder_io = FontBuilderIO;
     if (builder_io == NULL)
     {
-#ifdef IMGUI_ENABLE_FREETYPE
-        builder_io = ImGuiFreeType::GetBuilderForFreeType();
-#elif defined(IMGUI_ENABLE_MSDFGEN)
+#if defined(IMGUI_ENABLE_MSDFGEN)
         builder_io = ImGuiMsdfgen::GetBuilderForMsdfgen();
+#elif defined(IMGUI_ENABLE_FREETYPE)
+        builder_io = ImGuiFreeType::GetBuilderForFreeType();
 #elif defined(IMGUI_ENABLE_STB_TRUETYPE)
         builder_io = ImFontAtlasGetBuilderForStbTruetype();
 #else
