@@ -3844,6 +3844,7 @@ enum ImFontAtlasFlags_
 // - This is an old API and it is currently awkward for those and various other reasons! We will address them in the future!
 struct ImFontAtlas
 {
+	void *sharedLibrary = nullptr;
     IMGUI_API ImFontAtlas();
     IMGUI_API ~ImFontAtlas();
     IMGUI_API ImFont*           AddFont(const ImFontConfig* font_cfg);
