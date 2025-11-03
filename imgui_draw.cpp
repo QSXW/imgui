@@ -6171,6 +6171,7 @@ begin:
     // calculate SDF properties, a = cut-off value for signed distance (0.0 = disabled), width = anti-aliasing width
     float a = sdf ? 0.5f : 0.0f;
     float width = 0.25f / IMGUI_SDF_PADDING * float(baked->Size) / float(size);
+    width *= draw_list->_FringeScale;
     if (size < 16.0) {
         float extra = float(size) / 16.0f;
         width *= extra * extra;
