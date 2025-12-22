@@ -1693,7 +1693,7 @@ void ImDrawList::AddRectFilled(ImVec2 p_min, ImVec2 p_max, ImU32 col, float roun
     }
 
     float total = outer + rounding;
-    float antialiasing = 0.25f / total; // In the shader this value is used both ways, so in effect this is half a pixel. This results in sharp corners for the sides of the rounded rect.
+    float antialiasing = 0.25f / total * _FringeScale; // In the shader this value is used both ways, so in effect this is half a pixel. This results in sharp corners for the sides of the rounded rect.
     float threshold = ImMin(1.0f, float(outer + 0.25) / total);
     float outer_threshold = outer == 0 ? threshold : antialiasing; // if the outer calculatings are not needed, set the outer threshold to same value as inner threshold to avoid unneeded calculations
 
