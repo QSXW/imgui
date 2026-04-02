@@ -39,6 +39,9 @@ Index of this file:
 #ifdef IMGUI_ENABLE_FREETYPE
 #include "misc/freetype/imgui_freetype.h"
 #endif
+#ifdef IMGUI_ENABLE_MSDFGEN
+#include "imgui_msdfgen.h"
+#endif
 
 #include <stdio.h>      // vsnprintf, sscanf, printf
 #include <stdint.h>     // intptr_t
@@ -3523,6 +3526,23 @@ ImFont* ImFontAtlas::AddFontFromMemoryCompressedBase85TTF(const char* compressed
     return font;
 }
 
+ImFont *ImFontAtlas::AddFontFromImageAndGlyphData(void *pixels, int width, int heigth, void *glyphData, int glyphDataSize, float size_pixels, const ImFontConfig *font_cfg_template, const ImWchar *glyph_ranges)
+{
+    IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and EndFrame/Render()!");
+    ImFontConfig font_cfg = font_cfg_template ? *font_cfg_template : ImFontConfig();
+    IM_ASSERT(font_cfg.FontData == NULL);
+    font_cfg.FontPixels   = pixels;
+    font_cfg.width        = width;
+    font_cfg.heigth       = heigth;
+	font_cfg.FontData     = glyphData;
+	font_cfg.FontDataSize = glyphDataSize;
+    font_cfg.SizePixels = size_pixels > 0.0f ? size_pixels : font_cfg.SizePixels;
+    font_cfg.FontDataOwnedByAtlas = false;
+    if (glyph_ranges)
+        font_cfg.GlyphRanges = glyph_ranges;
+    return AddFont(&font_cfg);
+}
+
 // On font removal we need to remove references (otherwise we could queue removal?)
 // We allow old_font == new_font which forces updating all values (e.g. sizes)
 void ImFontAtlasBuildNotifySetFont(ImFontAtlas* atlas, ImFont* old_font, ImFont* new_font)
@@ -4539,6 +4559,8 @@ void ImFontAtlasBuildInit(ImFontAtlas* atlas)
     {
 #ifdef IMGUI_ENABLE_FREETYPE
         atlas->SetFontLoader(ImGuiFreeType::GetFontLoader());
+#elif defined(IMGUI_ENABLE_MSDFGEN)
+        atlas->SetFontLoader(ImGuiMsdfgen::GetFontLoader());
 #elif defined(IMGUI_ENABLE_STB_TRUETYPE)
         atlas->SetFontLoader(ImFontAtlasGetFontLoaderForStbTruetype());
 #else

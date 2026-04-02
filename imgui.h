@@ -3337,9 +3337,9 @@ struct ImDrawCmd
 };
 
 // Vertex layout
-#define IMGUI_SDF_DETAIL 40
+#define IMGUI_SDF_DETAIL 33.0625
 // so outlines are more or less the same size around the font
-#define IMGUI_SDF_PADDING (IMGUI_SDF_DETAIL/10)
+#define IMGUI_SDF_PADDING int(IMGUI_SDF_DETAIL/10)
 
 #ifndef IMGUI_OVERRIDE_DRAWVERT_STRUCT_LAYOUT
 struct ImDrawVert
@@ -3721,6 +3721,10 @@ struct ImTextureData
 // A font input/source (we may rename this to ImFontSource in the future)
 struct ImFontConfig
 {
+    int             width;
+    int             heigth;
+    void*           FontPixels;             //          // FontPixels
+
     // Data Source
     char            Name[40];               // <auto>   // Name (strictly to ease debugging, hence limited size buffer)
     void*           FontData;               //          // TTF/OTF data
@@ -3850,6 +3854,7 @@ struct ImFontAtlas
     IMGUI_API ImFont*           AddFontFromMemoryTTF(void* font_data, int font_data_size, float size_pixels = 0.0f, const ImFontConfig* font_cfg = NULL, const ImWchar* glyph_ranges = NULL); // Note: Transfer ownership of 'ttf_data' to ImFontAtlas! Will be deleted after destruction of the atlas. Set font_cfg->FontDataOwnedByAtlas=false to keep ownership of your data and it won't be freed.
     IMGUI_API ImFont*           AddFontFromMemoryCompressedTTF(const void* compressed_font_data, int compressed_font_data_size, float size_pixels = 0.0f, const ImFontConfig* font_cfg = NULL, const ImWchar* glyph_ranges = NULL); // 'compressed_font_data' still owned by caller. Compress with binary_to_compressed_c.cpp.
     IMGUI_API ImFont*           AddFontFromMemoryCompressedBase85TTF(const char* compressed_font_data_base85, float size_pixels = 0.0f, const ImFontConfig* font_cfg = NULL, const ImWchar* glyph_ranges = NULL);              // 'compressed_font_data_base85' still owned by caller. Compress with binary_to_compressed_c.cpp with -base85 parameter.
+    IMGUI_API ImFont*           AddFontFromImageAndGlyphData(void *pixels, int width, int heigth, void *glyphData, int glyphDataSize, float size_pixels, const ImFontConfig *font_cfg = NULL, const ImWchar *glyph_ranges = NULL);
     IMGUI_API void              RemoveFont(ImFont* font);
 
     IMGUI_API void              Clear();                    // Clear everything (input fonts, output glyphs/textures).
